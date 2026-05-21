@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DigiBook - Packs PDF</title>
+    <meta
+      name="description"
+      content="Achetez des packs de livres PDF et commandez rapidement sur WhatsApp."
+    />
+    <link rel="preconnect" href="https://covers.openlibrary.org" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Accueil DigiBook">
+        <span class="brand-mark">D</span>
+        <span>
+          <strong>DigiBook</strong>
+          <small>Bibliothèque PDF</small>
+        </span>
+      </a>
+
+      <nav class="nav-links" aria-label="Navigation principale">
+        <a href="#packs">Packs</a>
+        <a href="#catalogue">Livres</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Finance, discipline et confiance en soi</p>
+          <h1>Des livres PDF pour apprendre, agir et mieux gerer ton argent</h1>
+          <p>
+            Choisis un pack oriente developpement personnel et finance, puis
+            finalise directement sur WhatsApp. Les livres sont envoyes apres
+            confirmation.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button primary" href="#packs">Voir les packs</a>
+            <a class="button ghost" id="quick-whatsapp" href="#">WhatsApp</a>
+          </div>
+        </div>
+
+        <div class="hero-showcase" aria-label="Livres populaires">
+          <div class="showcase-card tall">
+            <img
+              src="https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg"
+              alt="Couverture Atomic Habits"
+            />
+          </div>
+          <div class="showcase-card featured">
+            <img
+              src="https://covers.openlibrary.org/b/isbn/9780857197689-L.jpg"
+              alt="Couverture The Psychology of Money"
+            />
+          </div>
+          <div class="showcase-card">
+            <img
+              src="https://covers.openlibrary.org/b/isbn/9781982137274-L.jpg"
+              alt="Couverture The Confidence Code"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Avantages">
+        <div>
+          <strong id="metric-pack-count">3</strong>
+          <span>Packs disponibles</span>
+        </div>
+        <div>
+          <strong>PDF</strong>
+          <span>Lecture sur telephone ou ordinateur</span>
+        </div>
+        <div>
+          <strong>WhatsApp</strong>
+          <span>Commande rapide et directe</span>
+        </div>
+      </section>
+
+      <section class="section-head" id="packs">
+        <div>
+          <p class="eyebrow">Offres</p>
+          <h2>Choisis ton pack</h2>
+        </div>
+        <a class="text-link" href="#catalogue">Voir les livres</a>
+      </section>
+
+      <section class="pack-grid" id="pack-list" aria-live="polite"></section>
+
+      <section class="section-head" id="catalogue">
+        <div>
+          <p class="eyebrow">Catalogue</p>
+          <h2>Livres disponibles</h2>
+        </div>
+        <label class="search-box">
+          <span>Rechercher</span>
+          <input id="book-search" type="search" placeholder="Titre, auteur, theme..." />
+        </label>
+      </section>
+
+      <section class="catalog-tools" aria-label="Filtres du catalogue">
+        <div class="catalog-summary">
+          <strong id="book-count">0</strong>
+          <span>livres trouves</span>
+        </div>
+        <div class="filter-pills" id="category-filters"></div>
+      </section>
+
+      <section class="book-grid" id="book-list" aria-live="polite"></section>
+
+      <section class="faq" id="faq">
+        <div>
+          <p class="eyebrow">Comment ça marche</p>
+          <h2>Commande simple</h2>
+        </div>
+        <div class="faq-grid">
+          <article>
+            <span>1</span>
+            <h3>Choisis un pack</h3>
+            <p>Sélectionne le volume qui t'arrange selon ton budget.</p>
+          </article>
+          <article>
+            <span>2</span>
+            <h3>Commande sur WhatsApp</h3>
+            <p>Le message de commande est préparé automatiquement.</p>
+          </article>
+          <article>
+            <span>3</span>
+            <h3>Reçois les PDF</h3>
+            <p>Après confirmation, les fichiers sont envoyés directement.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>© <span id="year"></span> DigiBook. Packs de livres PDF.</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

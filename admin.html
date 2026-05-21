@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin - DigiBook</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-page">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Accueil DigiBook">
+        <span class="brand-mark">D</span>
+        <span>
+          <strong>DigiBook</strong>
+          <small>Administration</small>
+        </span>
+      </a>
+
+      <nav class="nav-links" aria-label="Navigation admin">
+        <a href="index.html">Site</a>
+        <button class="link-button" id="export-data" type="button">Exporter</button>
+        <label class="link-button import-button">
+          Importer
+          <input id="import-data" type="file" accept="application/json" />
+        </label>
+      </nav>
+    </header>
+
+    <main class="admin-shell">
+      <section class="admin-intro">
+        <div>
+          <p class="eyebrow">Tableau de bord</p>
+          <h1>Modifier tes packs et tes livres</h1>
+          <p>
+            Les changements sont sauvegardés dans ce navigateur. Exporte le
+            fichier JSON si tu veux garder une copie.
+          </p>
+        </div>
+        <button class="button primary" id="save-data" type="button">Enregistrer</button>
+      </section>
+
+      <section class="admin-panel">
+        <h2>Paramètres</h2>
+        <div class="form-grid">
+          <label>
+            Nom du site
+            <input id="site-name" type="text" />
+          </label>
+          <label>
+            Devise
+            <input id="currency" type="text" placeholder="FCFA, CDF, GNF..." />
+          </label>
+          <label>
+            Numéro WhatsApp
+            <input id="whatsapp" type="tel" placeholder="Ex: 243900000000" />
+          </label>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title">
+          <h2>Packs</h2>
+          <button class="button small" id="add-pack" type="button">Ajouter un pack</button>
+        </div>
+        <div class="admin-list" id="admin-packs"></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title">
+          <h2>Livres</h2>
+          <button class="button small" id="add-book" type="button">Ajouter un livre</button>
+        </div>
+        <div class="admin-list" id="admin-books"></div>
+      </section>
+
+      <p class="save-status" id="save-status" role="status"></p>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
