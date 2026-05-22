@@ -5,7 +5,7 @@ Site vitrine pour vendre des packs de livres PDF avec commande via WhatsApp.
 ## Ouvrir le site
 
 - Page client: `index.html`
-- Page admin: `admin.html`
+- Page admin: `gestion-dbk-7x4.html`
 
 Tu peux aussi lancer un serveur local dans ce dossier:
 
@@ -21,7 +21,7 @@ http://127.0.0.1:4173
 
 ## Modifier les packs
 
-Va sur `admin.html`, puis tu peux:
+Va sur `gestion-dbk-7x4.html`, puis tu peux:
 
 - changer le nom du site;
 - mettre ton numéro WhatsApp au format international, par exemple `243900000000`;
@@ -32,7 +32,7 @@ Va sur `admin.html`, puis tu peux:
 - exporter/importer le catalogue en JSON.
 
 La page admin n'est pas affichee dans la navigation du site public. Ouvre
-directement `admin.html` quand tu veux modifier le catalogue.
+directement `gestion-dbk-7x4.html` quand tu veux modifier le catalogue.
 
 Le catalogue public a ete construit a partir des PDF trouves dans
 `D:\book for sale\`. La page client affiche maintenant une liste filtrable avec
@@ -49,10 +49,10 @@ Options recommandees:
 - Netlify: gratuit, tres pratique si tu veux deployer par glisser-deposer ou via GitHub.
 - Vercel: gratuit, propre aussi pour site statique.
 
-Ce site est statique. `admin.html` est masque de la navigation publique, mais
-il n'est pas protege par mot de passe dans cette version. Pour un vrai espace
-admin securise en ligne, il faudra ajouter une authentification ou passer par un
-backend.
+La page de gestion est masquee de la navigation publique et protegee par
+Supabase Auth quand la configuration Supabase est active. Garder une URL peu
+evidente reduit l'exposition, mais la vraie protection reste la connexion admin
+et les politiques RLS.
 
 ## Supabase admin
 
@@ -74,6 +74,6 @@ values ('TON_UUID_UTILISATEUR');
 8. Copie `Project URL` et `anon public key`.
 9. Mets ces valeurs dans `supabase-config.js`.
 
-Une fois configure, `admin.html` affiche une connexion email/mot de passe et les
+Une fois configure, `gestion-dbk-7x4.html` affiche une connexion email/mot de passe et les
 modifications sont sauvegardees dans Supabase. Sans configuration Supabase, le
 site garde le mode local avec `localStorage`.
