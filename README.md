@@ -53,3 +53,27 @@ Ce site est statique. `admin.html` est masque de la navigation publique, mais
 il n'est pas protege par mot de passe dans cette version. Pour un vrai espace
 admin securise en ligne, il faudra ajouter une authentification ou passer par un
 backend.
+
+## Supabase admin
+
+Supabase est prevu pour l'authentification admin et la sauvegarde du catalogue.
+
+1. Cree un projet sur Supabase.
+2. Va dans `SQL Editor`.
+3. Execute le contenu de `supabase-schema.sql`.
+4. Va dans `Authentication > Users` et cree ton utilisateur admin.
+5. Copie l'UUID de cet utilisateur.
+6. Dans `SQL Editor`, execute:
+
+```sql
+insert into public.admin_users (user_id)
+values ('TON_UUID_UTILISATEUR');
+```
+
+7. Va dans `Project Settings > API`.
+8. Copie `Project URL` et `anon public key`.
+9. Mets ces valeurs dans `supabase-config.js`.
+
+Une fois configure, `admin.html` affiche une connexion email/mot de passe et les
+modifications sont sauvegardees dans Supabase. Sans configuration Supabase, le
+site garde le mode local avec `localStorage`.

@@ -26,7 +26,27 @@
       </nav>
     </header>
 
-    <main class="admin-shell">
+    <section class="admin-login hidden" id="admin-login">
+      <div>
+        <p class="eyebrow">Connexion securisee</p>
+        <h1>Espace admin</h1>
+        <p>Connecte-toi pour modifier les packs, les prix et le catalogue.</p>
+      </div>
+      <form class="login-card" id="login-form">
+        <label>
+          Email
+          <input id="login-email" type="email" autocomplete="email" required />
+        </label>
+        <label>
+          Mot de passe
+          <input id="login-password" type="password" autocomplete="current-password" required />
+        </label>
+        <button class="button primary" type="submit">Se connecter</button>
+        <p class="save-status" id="login-status" role="status"></p>
+      </form>
+    </section>
+
+    <main class="admin-shell" id="admin-content">
       <section class="admin-intro">
         <div>
           <p class="eyebrow">Tableau de bord</p>
@@ -36,6 +56,9 @@
             fichier JSON si tu veux garder une copie.
           </p>
         </div>
+        <button class="button ghost admin-logout hidden" id="logout-button" type="button">
+          Deconnexion
+        </button>
         <button class="button primary" id="save-data" type="button">Enregistrer</button>
       </section>
 
@@ -76,6 +99,8 @@
       <p class="save-status" id="save-status" role="status"></p>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

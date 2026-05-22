@@ -356,6 +356,23 @@ h2 {
   line-height: 1;
 }
 
+.promo-price {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.old-price {
+  width: max-content;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 800;
+  text-decoration: line-through;
+}
+
+.new-price {
+  color: var(--ink);
+}
+
 .pack-books {
   display: flex;
   flex-wrap: wrap;
@@ -556,6 +573,47 @@ textarea:focus {
   padding-bottom: 4rem;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.admin-login {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+  gap: 2rem;
+  align-items: start;
+  width: min(1120px, calc(100% - 32px));
+  margin: 3rem auto;
+}
+
+.admin-login h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.4rem, 5vw, 4.7rem);
+  line-height: 1;
+}
+
+.login-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.login-card label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.admin-logout {
+  color: var(--ink);
+}
+
 .admin-intro {
   display: flex;
   align-items: end;
@@ -663,7 +721,8 @@ textarea:focus {
   .hero,
   .pack-grid,
   .faq-grid,
-  .form-grid {
+  .form-grid,
+  .admin-login {
     grid-template-columns: 1fr;
   }
 

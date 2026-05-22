@@ -1,7 +1,16 @@
 const STORAGE_KEY = "digibook-data";
 
+function getSupabaseClient() {
+  const config = window.DIGIBOOK_SUPABASE || {};
+  if (!config.url || !config.anonKey || !window.supabase) return null;
+  if (!window.digibookSupabase) {
+    window.digibookSupabase = window.supabase.createClient(config.url, config.anonKey);
+  }
+  return window.digibookSupabase;
+}
+
 const defaults = {
-  catalogVersion: 4,
+  catalogVersion: 5,
   siteName: "DigiBook",
   currency: "FC",
   whatsapp: "",
@@ -11,6 +20,7 @@ const defaults = {
       name: "Pack Confiance",
       count: 30,
       price: 1500,
+      originalPrice: 2500,
       description: "Une base solide pour travailler l'etat d'esprit, la discipline et l'estime de soi.",
       featured: false,
       enabled: true,
@@ -21,6 +31,7 @@ const defaults = {
       name: "Pack Croissance",
       count: 50,
       price: 2000,
+      originalPrice: 3500,
       description: "Le meilleur equilibre pour progresser en developpement personnel et en finance.",
       featured: true,
       enabled: true,
@@ -31,6 +42,7 @@ const defaults = {
       name: "Pack Investisseur",
       count: 100,
       price: 3000,
+      originalPrice: 5000,
       description: "Pack prepare pour plus tard, quand le catalogue atteindra 100 livres.",
       featured: false,
       enabled: false,
@@ -113,7 +125,34 @@ function book(title, author, category) {
   };
 }
 
-function loadData() {
+async function loadData() {
+  const db = getSupabaseClient();
+  if (db) {
+    try {
+      const [settingsResult, packsResult, booksResult] = await Promise.all([
+        db.from("site_settings").select("*").eq("id", "default").maybeSingle(),
+        db.from("packs").select("*").order("sort_order", { ascending: true }),
+        db.from("books").select("*").order("sort_order", { ascending: true }),
+      ]);
+
+      if (settingsResult.error) throw settingsResult.error;
+      if (packsResult.error) throw packsResult.error;
+      if (booksResult.error) throw booksResult.error;
+
+      const settings = settingsResult.data || {};
+      return {
+        ...structuredClone(defaults),
+        siteName: settings.site_name || defaults.siteName,
+        currency: settings.currency || defaults.currency,
+        whatsapp: settings.whatsapp || defaults.whatsapp,
+        packs: packsResult.data?.length ? packsResult.data.map(mapPackFromDb) : defaults.packs,
+        books: booksResult.data?.length ? booksResult.data.map(mapBookFromDb) : defaults.books,
+      };
+    } catch (error) {
+      console.warn("Supabase indisponible, fallback local.", error);
+    }
+  }
+
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return structuredClone(defaults);
 
@@ -138,8 +177,89 @@ function loadData() {
   }
 }
 
-function saveData(data) {
+async function saveData(data) {
+  const db = getSupabaseClient();
+  if (db) {
+    await saveDataToSupabase(db, data);
+    return;
+  }
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function mapPackFromDb(pack) {
+  return {
+    id: pack.id,
+    name: pack.name,
+    count: pack.count,
+    price: pack.price,
+    originalPrice: pack.original_price,
+    description: pack.description,
+    featured: pack.featured,
+    enabled: pack.enabled,
+    books: pack.books,
+  };
+}
+
+function mapBookFromDb(book) {
+  return {
+    id: book.id,
+    title: book.title,
+    author: book.author,
+    category: book.category,
+    cover: book.cover,
+  };
+}
+
+async function saveDataToSupabase(db, data) {
+  const settings = {
+    id: "default",
+    site_name: data.siteName || "DigiBook",
+    currency: data.currency || "FC",
+    whatsapp: data.whatsapp || "",
+    updated_at: new Date().toISOString(),
+  };
+
+  const packs = data.packs.map((pack, index) => ({
+    id: pack.id,
+    name: pack.name || "Pack",
+    count: Number(pack.count || 0),
+    price: Number(pack.price || 0),
+    original_price: Number(pack.originalPrice || pack.price || 0),
+    description: pack.description || "",
+    featured: Boolean(pack.featured),
+    enabled: pack.enabled !== false,
+    books: pack.books || "",
+    sort_order: index,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const books = data.books.map((book, index) => ({
+    id: book.id,
+    title: book.title || "Livre",
+    author: book.author || "",
+    category: book.category || "Autres",
+    cover: book.cover || "",
+    sort_order: index,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const results = await Promise.all([
+    db.from("site_settings").upsert(settings),
+    db.from("packs").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
+    db.from("books").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
+  ]);
+
+  const deleteError = results.find((result) => result.error)?.error;
+  if (deleteError) throw deleteError;
+
+  const insertResults = await Promise.all([
+    packs.length ? db.from("packs").insert(packs) : Promise.resolve({ error: null }),
+    books.length ? db.from("books").insert(books) : Promise.resolve({ error: null }),
+  ]);
+
+  const insertError = insertResults.find((result) => result.error)?.error;
+  if (insertError) throw insertError;
 }
 
 function formatPrice(value, currency) {
@@ -165,11 +285,11 @@ function fallbackCover(title) {
   return `https://placehold.co/480x720/17231f/d7a83f?text=${text}`;
 }
 
-function renderPublic() {
+async function renderPublic() {
   const packList = document.querySelector("#pack-list");
   if (!packList) return;
 
-  const data = loadData();
+  const data = await loadData();
   const visiblePacks = data.packs.filter((pack) => pack.enabled !== false);
   document.title = `${data.siteName || "DigiBook"} - Packs PDF`;
   document.querySelectorAll(".brand strong").forEach((item) => {
@@ -197,7 +317,10 @@ function renderPublic() {
             </div>
             <span class="pack-count">${Number(pack.count || 0)}</span>
           </div>
-          <div class="price">${formatPrice(pack.price, data.currency)}</div>
+          <div class="price promo-price">
+            <span class="old-price">${formatPrice(pack.originalPrice || pack.price, data.currency)}</span>
+            <span class="new-price">${formatPrice(pack.price, data.currency)}</span>
+          </div>
           <p>${escapeHtml(pack.description || "")}</p>
           <ul class="pack-books">
             ${String(pack.books || "")
@@ -324,11 +447,58 @@ function getInitials(title = "") {
     .toUpperCase();
 }
 
-function renderAdmin() {
+async function requireAdminSession(db) {
+  const login = document.querySelector("#admin-login");
+  const content = document.querySelector("#admin-content");
+  const logout = document.querySelector("#logout-button");
+  const form = document.querySelector("#login-form");
+  const status = document.querySelector("#login-status");
+  const { data } = await db.auth.getSession();
+
+  if (data.session) {
+    login?.classList.add("hidden");
+    content?.classList.remove("hidden");
+    logout?.classList.remove("hidden");
+    logout?.addEventListener("click", async () => {
+      await db.auth.signOut();
+      window.location.reload();
+    });
+    return true;
+  }
+
+  content?.classList.add("hidden");
+  login?.classList.remove("hidden");
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (status) status.textContent = "Connexion...";
+    const email = document.querySelector("#login-email")?.value.trim();
+    const password = document.querySelector("#login-password")?.value;
+    const result = await db.auth.signInWithPassword({ email, password });
+    if (result.error) {
+      if (status) status.textContent = result.error.message;
+      return;
+    }
+    window.location.reload();
+  });
+
+  return false;
+}
+
+async function renderAdmin() {
   const adminPacks = document.querySelector("#admin-packs");
   if (!adminPacks) return;
 
-  const data = loadData();
+  const db = getSupabaseClient();
+  if (db) {
+    const canContinue = await requireAdminSession(db);
+    if (!canContinue) return;
+  } else {
+    document.querySelector("#admin-login")?.classList.add("hidden");
+    document.querySelector("#admin-content")?.classList.remove("hidden");
+  }
+
+  const data = await loadData();
   const siteName = document.querySelector("#site-name");
   const currency = document.querySelector("#currency");
   const whatsapp = document.querySelector("#whatsapp");
@@ -357,7 +527,10 @@ function renderAdmin() {
             <label class="span-2">Prix
               <input data-field="price" type="number" min="0" value="${escapeAttribute(pack.price)}" />
             </label>
-            <label class="span-3">Thèmes inclus
+            <label class="span-2">Avant promo
+              <input data-field="originalPrice" type="number" min="0" value="${escapeAttribute(pack.originalPrice || pack.price)}" />
+            </label>
+            <label class="span-3">Themes inclus
               <input data-field="books" value="${escapeAttribute(pack.books)}" />
             </label>
             <label class="span-2">Populaire
@@ -366,7 +539,7 @@ function renderAdmin() {
             <label class="span-2">Afficher
               <input data-field="enabled" type="checkbox" ${pack.enabled !== false ? "checked" : ""} />
             </label>
-            <label class="span-8">Description
+            <label class="span-6">Description
               <textarea data-field="description">${escapeHtml(pack.description)}</textarea>
             </label>
             <button class="button danger span-2" data-delete-pack="${index}" type="button">Supprimer</button>
@@ -411,7 +584,9 @@ function renderAdmin() {
       pack[field] = ["featured", "enabled"].includes(field)
         ? event.target.checked
         : event.target.value;
-      if (field === "count" || field === "price") pack[field] = Number(event.target.value);
+      if (field === "count" || field === "price" || field === "originalPrice") {
+        pack[field] = Number(event.target.value);
+      }
     }
 
     if (bookItem && field) {
@@ -441,6 +616,7 @@ function renderAdmin() {
       name: "Nouveau pack",
       count: 10,
       price: 1000,
+      originalPrice: 1500,
       description: "Description du pack.",
       featured: false,
       enabled: true,
@@ -462,8 +638,9 @@ function renderAdmin() {
 
   document.querySelector("#save-data").addEventListener("click", () => {
     collectBasics();
-    saveData(data);
-    setStatus("Modifications enregistrees.");
+    saveData(data)
+      .then(() => setStatus("Modifications enregistrees."))
+      .catch((error) => setStatus(`Erreur: ${error.message || "sauvegarde impossible"}`));
   });
 
   document.querySelector("#export-data").addEventListener("click", () => {
@@ -482,7 +659,7 @@ function renderAdmin() {
     try {
       const imported = JSON.parse(await file.text());
       Object.assign(data, imported);
-      saveData(data);
+      await saveData(data);
       renderAdmin();
       setStatus("Catalogue importe.");
     } catch {
