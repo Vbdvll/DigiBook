@@ -96,11 +96,11 @@ const defaults = {
   upcomingProducts: [
     {
       id: crypto.randomUUID(),
-      name: "Bibliotheque audio",
+      name: "DigiBook Audio",
       productType: "Livres audio",
-      description: "Une selection de livres a ecouter sur telephone, en deplacement ou pendant tes activites.",
+      description: "Pas le temps de lire ? Aucun souci. Il vous suffit d'une paire d'ecouteurs pour apprendre partout : dans les transports, pendant une marche ou entre deux activites.",
       imageUrl: "",
-      status: "Arrive bientot",
+      status: "Bientot disponible",
       expectedDate: "",
       notifyEnabled: true,
       enabled: true,
@@ -150,7 +150,7 @@ async function loadData() {
         books: booksResult.data?.length ? booksResult.data.map(mapBookFromDb) : defaults.books,
         upcomingProducts: upcomingResult.error
           ? defaults.upcomingProducts
-          : (upcomingResult.data || []).map(mapUpcomingFromDb),
+          : normalizeUpcomingProducts((upcomingResult.data || []).map(mapUpcomingFromDb)),
         socialLinks: socialsResult.error
           ? defaults.socialLinks
           : (socialsResult.data || []).map(mapSocialFromDb),
@@ -254,6 +254,27 @@ function mapUpcomingFromDb(product) {
     notifyEnabled: product.notify_enabled,
     enabled: product.enabled,
   };
+}
+
+function normalizeUpcomingProducts(products) {
+  const legacyDescription =
+    "Une selection de livres a ecouter sur telephone, en deplacement ou pendant tes activites.";
+
+  return products.map((product) => {
+    if (
+      product.name === "Bibliotheque audio" &&
+      (!product.description || product.description === legacyDescription)
+    ) {
+      return {
+        ...product,
+        name: "DigiBook Audio",
+        status: "Bientot disponible",
+        description:
+          "Pas le temps de lire ? Aucun souci. Il vous suffit d'une paire d'ecouteurs pour apprendre partout : dans les transports, pendant une marche ou entre deux activites.",
+      };
+    }
+    return product;
+  });
 }
 
 function mapSocialFromDb(link) {
