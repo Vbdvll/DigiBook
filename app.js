@@ -150,7 +150,9 @@ async function loadData() {
         books: booksResult.data?.length ? booksResult.data.map(mapBookFromDb) : defaults.books,
         upcomingProducts: upcomingResult.error
           ? defaults.upcomingProducts
-          : normalizeUpcomingProducts((upcomingResult.data || []).map(mapUpcomingFromDb)),
+          : upcomingResult.data?.length
+            ? normalizeUpcomingProducts(upcomingResult.data.map(mapUpcomingFromDb))
+            : defaults.upcomingProducts,
         socialLinks: socialsResult.error
           ? defaults.socialLinks
           : (socialsResult.data || []).map(mapSocialFromDb),
@@ -466,12 +468,21 @@ async function renderPublic() {
 
   let activeCategory = "Tous";
   let searchTerm = "";
+  let catalogPage = 1;
+  const booksPerPage = 12;
 
   const search = document.querySelector("#book-search");
   const filters = document.querySelector("#category-filters");
+  const previousBooks = document.querySelector("#previous-books");
+  const nextBooks = document.querySelector("#next-books");
   const renderCatalog = () => {
+    const filteredBooks = filterBooks(data.books, searchTerm, activeCategory);
+    const totalPages = Math.max(1, Math.ceil(filteredBooks.length / booksPerPage));
+    catalogPage = Math.min(catalogPage, totalPages);
+    const start = (catalogPage - 1) * booksPerPage;
     renderCategoryFilters(data.books, activeCategory);
-    renderBooks(filterBooks(data.books, searchTerm, activeCategory));
+    renderBooks(filteredBooks.slice(start, start + booksPerPage), filteredBooks.length);
+    renderCatalogPagination(catalogPage, totalPages);
   };
 
   renderCatalog();
@@ -479,6 +490,7 @@ async function renderPublic() {
   if (search) {
     search.addEventListener("input", () => {
       searchTerm = search.value.trim().toLowerCase();
+      catalogPage = 1;
       renderCatalog();
     });
   }
@@ -488,9 +500,23 @@ async function renderPublic() {
       const button = event.target.closest("[data-category]");
       if (!button) return;
       activeCategory = button.dataset.category;
+      catalogPage = 1;
       renderCatalog();
     });
   }
+
+  previousBooks?.addEventListener("click", () => {
+    if (catalogPage <= 1) return;
+    catalogPage -= 1;
+    renderCatalog();
+    document.querySelector("#catalogue")?.scrollIntoView({ behavior: "smooth" });
+  });
+
+  nextBooks?.addEventListener("click", () => {
+    catalogPage += 1;
+    renderCatalog();
+    document.querySelector("#catalogue")?.scrollIntoView({ behavior: "smooth" });
+  });
 
   renderUpcoming(data);
   renderSocialLinks(data.socialLinks);
@@ -556,12 +582,12 @@ function renderSocialLinks(links) {
     .join("");
 }
 
-function renderBooks(books) {
+function renderBooks(books, totalCount = books.length) {
   const bookList = document.querySelector("#book-list");
   if (!bookList) return;
 
   const count = document.querySelector("#book-count");
-  if (count) count.textContent = books.length;
+  if (count) count.textContent = totalCount;
 
   bookList.innerHTML =
     books
@@ -578,6 +604,19 @@ function renderBooks(books) {
         `,
       )
       .join("") || `<p>Aucun livre trouve.</p>`;
+}
+
+function renderCatalogPagination(currentPage, totalPages) {
+  const pagination = document.querySelector("#catalog-pagination");
+  const previous = document.querySelector("#previous-books");
+  const next = document.querySelector("#next-books");
+  const status = document.querySelector("#catalog-page-status");
+  if (!pagination || !previous || !next || !status) return;
+
+  pagination.classList.toggle("hidden", totalPages <= 1);
+  previous.disabled = currentPage <= 1;
+  next.disabled = currentPage >= totalPages;
+  status.textContent = `Page ${currentPage} sur ${totalPages}`;
 }
 
 function filterBooks(books, term, category) {

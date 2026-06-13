@@ -534,6 +534,31 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
+.catalog-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+}
+
+.catalog-pagination span {
+  min-width: 110px;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 800;
+}
+
+.pagination-button {
+  min-width: 108px;
+}
+
+.pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  transform: none;
+}
+
 .upcoming-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
