@@ -10,7 +10,7 @@ function getSupabaseClient() {
 }
 
 const defaults = {
-  catalogVersion: 5,
+  catalogVersion: 6,
   siteName: "DigiBook",
   currency: "FC",
   whatsapp: "",
@@ -43,13 +43,15 @@ const defaults = {
       count: 100,
       price: 3000,
       originalPrice: 5000,
-      description: "Pack prepare pour plus tard, quand le catalogue atteindra 100 livres.",
+      description: "La bibliotheque complete pour progresser en finance, business, communication et developpement personnel.",
       featured: false,
-      enabled: false,
+      enabled: true,
       books: "Investissement, Business, Richesse, Discipline",
     },
   ],
-  books: [
+  books: window.DIGIBOOK_CATALOG?.length
+    ? structuredClone(window.DIGIBOOK_CATALOG)
+    : [
     book("L'ego est l'ennemi", "Ryan Holiday", "Developpement personnel"),
     book("Le Personal MBA", "Josh Kaufman", "Business"),
     book("40 ans de prison ou 5 ans de travail force", "Maxime", "Developpement personnel"),
@@ -244,22 +246,28 @@ async function saveDataToSupabase(db, data) {
     updated_at: new Date().toISOString(),
   }));
 
-  const results = await Promise.all([
+  const upsertResults = await Promise.all([
     db.from("site_settings").upsert(settings),
-    db.from("packs").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
-    db.from("books").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
+    packs.length ? db.from("packs").upsert(packs) : Promise.resolve({ error: null }),
+    books.length ? db.from("books").upsert(books) : Promise.resolve({ error: null }),
   ]);
 
-  const deleteError = results.find((result) => result.error)?.error;
-  if (deleteError) throw deleteError;
+  const upsertError = upsertResults.find((result) => result.error)?.error;
+  if (upsertError) throw upsertError;
 
-  const insertResults = await Promise.all([
-    packs.length ? db.from("packs").insert(packs) : Promise.resolve({ error: null }),
-    books.length ? db.from("books").insert(books) : Promise.resolve({ error: null }),
+  const packIds = packs.map((pack) => pack.id);
+  const bookIds = books.map((book) => book.id);
+  const cleanupResults = await Promise.all([
+    packIds.length
+      ? db.from("packs").delete().not("id", "in", `(${packIds.join(",")})`)
+      : db.from("packs").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
+    bookIds.length
+      ? db.from("books").delete().not("id", "in", `(${bookIds.join(",")})`)
+      : db.from("books").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
   ]);
 
-  const insertError = insertResults.find((result) => result.error)?.error;
-  if (insertError) throw insertError;
+  const cleanupError = cleanupResults.find((result) => result.error)?.error;
+  if (cleanupError) throw cleanupError;
 }
 
 function formatPrice(value, currency) {
@@ -634,6 +642,30 @@ async function renderAdmin() {
       cover: "",
     });
     draw();
+  });
+
+  document.querySelector("#sync-default-catalog")?.addEventListener("click", async () => {
+    const sourceCatalog = window.DIGIBOOK_CATALOG || [];
+    if (sourceCatalog.length !== 100) {
+      setStatus(`Catalogue source invalide: ${sourceCatalog.length} livres trouves.`);
+      return;
+    }
+
+    data.books = structuredClone(sourceCatalog);
+    const premiumPack = data.packs.find((pack) => Number(pack.count) === 100);
+    if (premiumPack) {
+      premiumPack.enabled = true;
+      premiumPack.description =
+        "La bibliotheque complete pour progresser en finance, business, communication et developpement personnel.";
+    }
+
+    draw();
+    try {
+      await saveData(data);
+      setStatus("Catalogue de 100 livres synchronise avec Supabase.");
+    } catch (error) {
+      setStatus(`Erreur: ${error.message || "synchronisation impossible"}`);
+    }
   });
 
   document.querySelector("#save-data").addEventListener("click", () => {

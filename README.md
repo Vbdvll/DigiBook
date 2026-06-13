@@ -38,6 +38,11 @@ Le catalogue public a ete construit a partir des PDF trouves dans
 `D:\book for sale\`. La page client affiche maintenant une liste filtrable avec
 recherche, categories et compteur de resultats.
 
+La source officielle actuelle est `D:\book for sale\Fore sale`, qui contient
+100 PDF. Dans la page de gestion, le bouton `Charger les 100 livres` remplace le
+catalogue courant par cette selection, active le pack 100 et synchronise le tout
+avec Supabase.
+
 Les changements de l'admin sont enregistrés dans le navigateur avec `localStorage`.
 Pour un vrai admin en ligne qui modifie le site pour tous les visiteurs, il faudra ajouter un backend ou connecter une base de données.
 
