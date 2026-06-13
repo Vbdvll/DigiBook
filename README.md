@@ -82,3 +82,19 @@ values ('TON_UUID_UTILISATEUR');
 Une fois configure, `gestion-dbk-7x4.html` affiche une connexion email/mot de passe et les
 modifications sont sauvegardees dans Supabase. Sans configuration Supabase, le
 site garde le mode local avec `localStorage`.
+
+### Migration produits et reseaux
+
+Pour un projet Supabase deja configure, execute une seule fois le fichier
+`supabase-migration-products.sql` dans `SQL Editor`. Il cree les tables:
+
+- `upcoming_products` pour les produits annonces comme bientot disponibles;
+- `social_links` pour Facebook, YouTube, Telegram et les autres liens.
+
+Apres cette migration, les deux sections sont modifiables depuis la page de
+gestion et le bouton `Enregistrer` les synchronise avec Supabase.
+
+L'offre publique est limitee a une bibliotheque de 100 ebooks a `2 100 FC`.
+Si la base contient encore les anciens packs, l'application selectionne
+automatiquement le pack de 100 livres. Un enregistrement depuis l'admin nettoie
+ensuite les anciennes offres dans Supabase.

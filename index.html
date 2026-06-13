@@ -22,8 +22,9 @@
       </a>
 
       <nav class="nav-links" aria-label="Navigation principale">
-        <a href="#packs">Packs</a>
+        <a href="#packs">Offre</a>
         <a href="#catalogue">Livres</a>
+        <a href="#prochainement">Prochainement</a>
         <a href="#faq">FAQ</a>
       </nav>
     </header>
@@ -34,13 +35,14 @@
           <p class="eyebrow">Finance, discipline et confiance en soi</p>
           <h1>Des livres PDF pour apprendre, agir et mieux gerer ton argent</h1>
           <p>
-            Choisis un pack oriente developpement personnel et finance, puis
+            Profite d'une bibliotheque de 100 ebooks sur le developpement personnel,
+            la finance et le business, puis
             finalise directement sur WhatsApp. Les livres sont envoyes apres
             confirmation.
           </p>
 
           <div class="hero-actions">
-            <a class="button primary" href="#packs">Voir les packs</a>
+            <a class="button primary" href="#packs">Voir l'offre</a>
             <a class="button ghost" id="quick-whatsapp" href="#">WhatsApp</a>
           </div>
         </div>
@@ -69,8 +71,8 @@
 
       <section class="metrics" aria-label="Avantages">
         <div>
-          <strong id="metric-pack-count">3</strong>
-          <span>Packs disponibles</span>
+          <strong>100</strong>
+          <span>Ebooks disponibles</span>
         </div>
         <div>
           <strong>PDF</strong>
@@ -84,8 +86,8 @@
 
       <section class="section-head" id="packs">
         <div>
-          <p class="eyebrow">Offres</p>
-          <h2>Choisis ton pack</h2>
+          <p class="eyebrow">Offre actuelle</p>
+          <h2>La bibliotheque complete</h2>
         </div>
         <a class="text-link" href="#catalogue">Voir les livres</a>
       </section>
@@ -113,6 +115,15 @@
 
       <section class="book-grid" id="book-list" aria-live="polite"></section>
 
+      <section class="section-head" id="prochainement">
+        <div>
+          <p class="eyebrow">La suite</p>
+          <h2>Arrive bientot</h2>
+        </div>
+      </section>
+
+      <section class="upcoming-grid" id="upcoming-list" aria-live="polite"></section>
+
       <section class="faq" id="faq">
         <div>
           <p class="eyebrow">Comment ça marche</p>
@@ -121,7 +132,7 @@
         <div class="faq-grid">
           <article>
             <span>1</span>
-            <h3>Choisis un pack</h3>
+            <h3>Consulte les titres</h3>
             <p>Sélectionne le volume qui t'arrange selon ton budget.</p>
           </article>
           <article>
@@ -140,6 +151,7 @@
 
     <footer class="footer">
       <p>© <span id="year"></span> DigiBook. Packs de livres PDF.</p>
+      <nav class="social-links" id="social-links" aria-label="Reseaux sociaux"></nav>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

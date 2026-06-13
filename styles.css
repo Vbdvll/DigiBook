@@ -298,7 +298,7 @@ h2 {
 
 .pack-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: minmax(0, 760px);
   gap: 1rem;
 }
 
@@ -534,6 +534,74 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
+.upcoming-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.upcoming-card {
+  display: grid;
+  grid-template-rows: 180px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(25, 20, 15, 0.08);
+}
+
+.upcoming-visual {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    linear-gradient(140deg, rgba(31, 107, 84, 0.92), rgba(37, 63, 98, 0.92)),
+    #1f6b54;
+  color: var(--gold);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+}
+
+.upcoming-visual img {
+  height: 100%;
+  object-fit: cover;
+}
+
+.upcoming-body {
+  display: flex;
+  min-height: 230px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.upcoming-body h3 {
+  margin: 0.7rem 0 0;
+}
+
+.upcoming-body p,
+.upcoming-body small {
+  color: var(--muted);
+}
+
+.upcoming-body .button {
+  margin-top: auto;
+}
+
+.upcoming-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .faq {
   margin: 5rem 0;
 }
@@ -568,6 +636,22 @@ textarea:focus {
   margin: 0 auto;
   padding: 2rem 0;
   border-top: 1px solid var(--line);
+}
+
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.social-links a {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .admin-shell {
@@ -723,10 +807,18 @@ textarea:focus {
   font-weight: 800;
 }
 
+.admin-hint {
+  align-self: center;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
 @media (max-width: 900px) {
   .hero,
   .pack-grid,
   .faq-grid,
+  .upcoming-grid,
   .form-grid,
   .admin-login {
     grid-template-columns: 1fr;

@@ -10,43 +10,21 @@ function getSupabaseClient() {
 }
 
 const defaults = {
-  catalogVersion: 6,
+  catalogVersion: 7,
   siteName: "DigiBook",
   currency: "FC",
   whatsapp: "",
   packs: [
     {
       id: crypto.randomUUID(),
-      name: "Pack Confiance",
-      count: 30,
-      price: 1500,
-      originalPrice: 2500,
-      description: "Une base solide pour travailler l'etat d'esprit, la discipline et l'estime de soi.",
-      featured: false,
-      enabled: true,
-      books: "Confiance en soi, Habitudes, Motivation",
-    },
-    {
-      id: crypto.randomUUID(),
-      name: "Pack Croissance",
-      count: 50,
-      price: 2000,
+      name: "Bibliotheque DigiBook",
+      count: 100,
+      price: 2100,
       originalPrice: 3500,
-      description: "Le meilleur equilibre pour progresser en developpement personnel et en finance.",
+      description: "La bibliotheque complete pour progresser en finance, business, communication et developpement personnel.",
       featured: true,
       enabled: true,
-      books: "Finance personnelle, Productivite, Mindset",
-    },
-    {
-      id: crypto.randomUUID(),
-      name: "Pack Investisseur",
-      count: 100,
-      price: 3000,
-      originalPrice: 5000,
-      description: "La bibliotheque complete pour progresser en finance, business, communication et developpement personnel.",
-      featured: false,
-      enabled: true,
-      books: "Investissement, Business, Richesse, Discipline",
+      books: "Finance & Business, Developpement personnel, Communication & Influence, Psychologie & Strategie",
     },
   ],
   books: window.DIGIBOOK_CATALOG?.length
@@ -115,6 +93,20 @@ const defaults = {
     book("Un an pour gagner un million", "Moran", "Business"),
     book("Un rien peut tout changer", "James Clear", "Productivite"),
   ],
+  upcomingProducts: [
+    {
+      id: crypto.randomUUID(),
+      name: "Bibliotheque audio",
+      productType: "Livres audio",
+      description: "Une selection de livres a ecouter sur telephone, en deplacement ou pendant tes activites.",
+      imageUrl: "",
+      status: "Arrive bientot",
+      expectedDate: "",
+      notifyEnabled: true,
+      enabled: true,
+    },
+  ],
+  socialLinks: [],
 };
 
 function book(title, author, category) {
@@ -141,14 +133,27 @@ async function loadData() {
       if (packsResult.error) throw packsResult.error;
       if (booksResult.error) throw booksResult.error;
 
+      const [upcomingResult, socialsResult] = await Promise.all([
+        db.from("upcoming_products").select("*").order("sort_order", { ascending: true }),
+        db.from("social_links").select("*").order("sort_order", { ascending: true }),
+      ]);
+
       const settings = settingsResult.data || {};
       return {
         ...structuredClone(defaults),
         siteName: settings.site_name || defaults.siteName,
         currency: settings.currency || defaults.currency,
         whatsapp: settings.whatsapp || defaults.whatsapp,
-        packs: packsResult.data?.length ? packsResult.data.map(mapPackFromDb) : defaults.packs,
+        packs: packsResult.data?.length
+          ? normalizeLegacyPacks(packsResult.data.map(mapPackFromDb))
+          : defaults.packs,
         books: booksResult.data?.length ? booksResult.data.map(mapBookFromDb) : defaults.books,
+        upcomingProducts: upcomingResult.error
+          ? defaults.upcomingProducts
+          : (upcomingResult.data || []).map(mapUpcomingFromDb),
+        socialLinks: socialsResult.error
+          ? defaults.socialLinks
+          : (socialsResult.data || []).map(mapSocialFromDb),
       };
     } catch (error) {
       console.warn("Supabase indisponible, fallback local.", error);
@@ -173,6 +178,10 @@ async function loadData() {
       ...data,
       packs: Array.isArray(data.packs) ? data.packs : defaults.packs,
       books: Array.isArray(data.books) ? data.books : defaults.books,
+      upcomingProducts: Array.isArray(data.upcomingProducts)
+        ? data.upcomingProducts
+        : defaults.upcomingProducts,
+      socialLinks: Array.isArray(data.socialLinks) ? data.socialLinks : defaults.socialLinks,
     };
   } catch {
     return structuredClone(defaults);
@@ -203,6 +212,26 @@ function mapPackFromDb(pack) {
   };
 }
 
+function normalizeLegacyPacks(packs) {
+  if (packs.length <= 1) return packs;
+
+  const mainPack =
+    packs.find((pack) => Number(pack.count) === 100) ||
+    packs.sort((a, b) => Number(b.count) - Number(a.count))[0];
+
+  return [
+    {
+      ...mainPack,
+      name: "Bibliotheque DigiBook",
+      count: 100,
+      price: 2100,
+      originalPrice: 3500,
+      featured: true,
+      enabled: true,
+    },
+  ];
+}
+
 function mapBookFromDb(book) {
   return {
     id: book.id,
@@ -210,6 +239,30 @@ function mapBookFromDb(book) {
     author: book.author,
     category: book.category,
     cover: book.cover,
+  };
+}
+
+function mapUpcomingFromDb(product) {
+  return {
+    id: product.id,
+    name: product.name,
+    productType: product.product_type,
+    description: product.description,
+    imageUrl: product.image_url,
+    status: product.status,
+    expectedDate: product.expected_date,
+    notifyEnabled: product.notify_enabled,
+    enabled: product.enabled,
+  };
+}
+
+function mapSocialFromDb(link) {
+  return {
+    id: link.id,
+    platform: link.platform,
+    label: link.label,
+    url: link.url,
+    enabled: link.enabled,
   };
 }
 
@@ -246,10 +299,40 @@ async function saveDataToSupabase(db, data) {
     updated_at: new Date().toISOString(),
   }));
 
+  const upcomingProducts = data.upcomingProducts.map((product, index) => ({
+    id: product.id,
+    name: product.name || "Produit a venir",
+    product_type: product.productType || "Autre",
+    description: product.description || "",
+    image_url: product.imageUrl || "",
+    status: product.status || "Arrive bientot",
+    expected_date: product.expectedDate || "",
+    notify_enabled: product.notifyEnabled !== false,
+    enabled: product.enabled !== false,
+    sort_order: index,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const socialLinks = data.socialLinks.map((link, index) => ({
+    id: link.id,
+    platform: link.platform || "Lien",
+    label: link.label || "",
+    url: link.url || "",
+    enabled: link.enabled !== false,
+    sort_order: index,
+    updated_at: new Date().toISOString(),
+  }));
+
   const upsertResults = await Promise.all([
     db.from("site_settings").upsert(settings),
     packs.length ? db.from("packs").upsert(packs) : Promise.resolve({ error: null }),
     books.length ? db.from("books").upsert(books) : Promise.resolve({ error: null }),
+    upcomingProducts.length
+      ? db.from("upcoming_products").upsert(upcomingProducts)
+      : Promise.resolve({ error: null }),
+    socialLinks.length
+      ? db.from("social_links").upsert(socialLinks)
+      : Promise.resolve({ error: null }),
   ]);
 
   const upsertError = upsertResults.find((result) => result.error)?.error;
@@ -257,6 +340,8 @@ async function saveDataToSupabase(db, data) {
 
   const packIds = packs.map((pack) => pack.id);
   const bookIds = books.map((book) => book.id);
+  const upcomingIds = upcomingProducts.map((product) => product.id);
+  const socialIds = socialLinks.map((link) => link.id);
   const cleanupResults = await Promise.all([
     packIds.length
       ? db.from("packs").delete().not("id", "in", `(${packIds.join(",")})`)
@@ -264,6 +349,12 @@ async function saveDataToSupabase(db, data) {
     bookIds.length
       ? db.from("books").delete().not("id", "in", `(${bookIds.join(",")})`)
       : db.from("books").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
+    upcomingIds.length
+      ? db.from("upcoming_products").delete().not("id", "in", `(${upcomingIds.join(",")})`)
+      : db.from("upcoming_products").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
+    socialIds.length
+      ? db.from("social_links").delete().not("id", "in", `(${socialIds.join(",")})`)
+      : db.from("social_links").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
   ]);
 
   const cleanupError = cleanupResults.find((result) => result.error)?.error;
@@ -298,7 +389,11 @@ async function renderPublic() {
   if (!packList) return;
 
   const data = await loadData();
-  const visiblePacks = data.packs.filter((pack) => pack.enabled !== false);
+  const enabledPacks = data.packs.filter((pack) => pack.enabled !== false);
+  const primaryPack =
+    enabledPacks.find((pack) => Number(pack.count) === 100) ||
+    enabledPacks.sort((a, b) => Number(b.count) - Number(a.count))[0];
+  const visiblePacks = primaryPack ? [primaryPack] : [];
   document.title = `${data.siteName || "DigiBook"} - Packs PDF`;
   document.querySelectorAll(".brand strong").forEach((item) => {
     item.textContent = data.siteName || "DigiBook";
@@ -376,8 +471,68 @@ async function renderPublic() {
     });
   }
 
+  renderUpcoming(data);
+  renderSocialLinks(data.socialLinks);
+
   const year = document.querySelector("#year");
   if (year) year.textContent = new Date().getFullYear();
+}
+
+function renderUpcoming(data) {
+  const list = document.querySelector("#upcoming-list");
+  if (!list) return;
+
+  const products = data.upcomingProducts.filter((product) => product.enabled !== false);
+  list.innerHTML =
+    products
+      .map((product) => {
+        const message = encodeURIComponent(
+          `Bonjour ${data.siteName || "DigiBook"}, je souhaite etre informe pour: ${product.name}.`,
+        );
+        const notifyUrl = `https://wa.me/${cleanPhone(data.whatsapp)}?text=${message}`;
+        return `
+          <article class="upcoming-card">
+            <div class="upcoming-visual">
+              ${
+                product.imageUrl
+                  ? `<img src="${escapeAttribute(product.imageUrl)}" alt="${escapeAttribute(product.name)}" loading="lazy" />`
+                  : `<span aria-hidden="true">${escapeHtml(getInitials(product.name))}</span>`
+              }
+            </div>
+            <div class="upcoming-body">
+              <div class="upcoming-meta">
+                <span>${escapeHtml(product.productType || "Nouveau produit")}</span>
+                <strong>${escapeHtml(product.status || "Arrive bientot")}</strong>
+              </div>
+              <h3>${escapeHtml(product.name)}</h3>
+              <p>${escapeHtml(product.description || "")}</p>
+              ${product.expectedDate ? `<small>Prevu: ${escapeHtml(product.expectedDate)}</small>` : ""}
+              ${
+                product.notifyEnabled
+                  ? `<a class="button small" href="${notifyUrl}" target="_blank" rel="noopener">Me prevenir</a>`
+                  : ""
+              }
+            </div>
+          </article>
+        `;
+      })
+      .join("") || `<p class="empty-state">De nouvelles offres sont en preparation.</p>`;
+}
+
+function renderSocialLinks(links) {
+  const container = document.querySelector("#social-links");
+  if (!container) return;
+
+  container.innerHTML = links
+    .filter((link) => link.enabled !== false && link.url)
+    .map(
+      (link) => `
+        <a href="${escapeAttribute(link.url)}" target="_blank" rel="noopener noreferrer">
+          ${escapeHtml(link.label || link.platform)}
+        </a>
+      `,
+    )
+    .join("");
 }
 
 function renderBooks(books) {
@@ -522,10 +677,16 @@ async function renderAdmin() {
   };
 
   const draw = () => {
-    adminPacks.innerHTML = data.packs
+    const primaryPackIndex = Math.max(
+      0,
+      data.packs.findIndex((pack) => Number(pack.count) === 100),
+    );
+    const primaryPack = data.packs[primaryPackIndex] || defaults.packs[0];
+
+    adminPacks.innerHTML = [primaryPack]
       .map(
-        (pack, index) => `
-          <article class="admin-item" data-pack-index="${index}">
+        (pack) => `
+          <article class="admin-item" data-pack-index="${primaryPackIndex}">
             <label class="span-3">Nom
               <input data-field="name" value="${escapeAttribute(pack.name)}" />
             </label>
@@ -550,7 +711,63 @@ async function renderAdmin() {
             <label class="span-6">Description
               <textarea data-field="description">${escapeHtml(pack.description)}</textarea>
             </label>
-            <button class="button danger span-2" data-delete-pack="${index}" type="button">Supprimer</button>
+            <p class="span-2 admin-hint">Cette offre est la seule affichee sur le site.</p>
+          </article>
+        `,
+      )
+      .join("");
+
+    document.querySelector("#admin-upcoming").innerHTML = data.upcomingProducts
+      .map(
+        (product, index) => `
+          <article class="admin-item" data-upcoming-index="${index}">
+            <label class="span-3">Nom
+              <input data-field="name" value="${escapeAttribute(product.name)}" />
+            </label>
+            <label class="span-2">Type
+              <input data-field="productType" value="${escapeAttribute(product.productType)}" placeholder="Livres audio" />
+            </label>
+            <label class="span-2">Statut
+              <input data-field="status" value="${escapeAttribute(product.status)}" placeholder="Arrive bientot" />
+            </label>
+            <label class="span-2">Date prevue
+              <input data-field="expectedDate" value="${escapeAttribute(product.expectedDate)}" placeholder="Fin 2026" />
+            </label>
+            <label class="span-3">Image (URL)
+              <input data-field="imageUrl" value="${escapeAttribute(product.imageUrl)}" />
+            </label>
+            <label class="span-8">Description
+              <textarea data-field="description">${escapeHtml(product.description)}</textarea>
+            </label>
+            <label class="span-2">Me prevenir
+              <input data-field="notifyEnabled" type="checkbox" ${product.notifyEnabled !== false ? "checked" : ""} />
+            </label>
+            <label class="span-2">Afficher
+              <input data-field="enabled" type="checkbox" ${product.enabled !== false ? "checked" : ""} />
+            </label>
+            <button class="button danger span-2" data-delete-upcoming="${index}" type="button">Supprimer</button>
+          </article>
+        `,
+      )
+      .join("");
+
+    document.querySelector("#admin-socials").innerHTML = data.socialLinks
+      .map(
+        (link, index) => `
+          <article class="admin-item" data-social-index="${index}">
+            <label class="span-3">Plateforme
+              <input data-field="platform" value="${escapeAttribute(link.platform)}" placeholder="Facebook" />
+            </label>
+            <label class="span-3">Libelle
+              <input data-field="label" value="${escapeAttribute(link.label)}" placeholder="Suivre sur Facebook" />
+            </label>
+            <label class="span-4">Lien
+              <input data-field="url" type="url" value="${escapeAttribute(link.url)}" placeholder="https://..." />
+            </label>
+            <label class="span-2">Afficher
+              <input data-field="enabled" type="checkbox" ${link.enabled !== false ? "checked" : ""} />
+            </label>
+            <button class="button danger span-2" data-delete-social="${index}" type="button">Supprimer</button>
           </article>
         `,
       )
@@ -585,6 +802,8 @@ async function renderAdmin() {
     collectBasics();
     const packItem = event.target.closest("[data-pack-index]");
     const bookItem = event.target.closest("[data-book-index]");
+    const upcomingItem = event.target.closest("[data-upcoming-index]");
+    const socialItem = event.target.closest("[data-social-index]");
     const field = event.target.dataset.field;
 
     if (packItem && field) {
@@ -601,11 +820,25 @@ async function renderAdmin() {
       const book = data.books[Number(bookItem.dataset.bookIndex)];
       book[field] = event.target.value;
     }
+
+    if (upcomingItem && field) {
+      const product = data.upcomingProducts[Number(upcomingItem.dataset.upcomingIndex)];
+      product[field] = ["notifyEnabled", "enabled"].includes(field)
+        ? event.target.checked
+        : event.target.value;
+    }
+
+    if (socialItem && field) {
+      const link = data.socialLinks[Number(socialItem.dataset.socialIndex)];
+      link[field] = field === "enabled" ? event.target.checked : event.target.value;
+    }
   });
 
   document.addEventListener("click", (event) => {
     const packDelete = event.target.closest("[data-delete-pack]");
     const bookDelete = event.target.closest("[data-delete-book]");
+    const upcomingDelete = event.target.closest("[data-delete-upcoming]");
+    const socialDelete = event.target.closest("[data-delete-social]");
 
     if (packDelete) {
       data.packs.splice(Number(packDelete.dataset.deletePack), 1);
@@ -616,19 +849,40 @@ async function renderAdmin() {
       data.books.splice(Number(bookDelete.dataset.deleteBook), 1);
       draw();
     }
+
+    if (upcomingDelete) {
+      data.upcomingProducts.splice(Number(upcomingDelete.dataset.deleteUpcoming), 1);
+      draw();
+    }
+
+    if (socialDelete) {
+      data.socialLinks.splice(Number(socialDelete.dataset.deleteSocial), 1);
+      draw();
+    }
   });
 
-  document.querySelector("#add-pack").addEventListener("click", () => {
-    data.packs.push({
+  document.querySelector("#add-upcoming")?.addEventListener("click", () => {
+    data.upcomingProducts.push({
       id: crypto.randomUUID(),
-      name: "Nouveau pack",
-      count: 10,
-      price: 1000,
-      originalPrice: 1500,
-      description: "Description du pack.",
-      featured: false,
+      name: "Nouveau produit",
+      productType: "Livres audio",
+      description: "",
+      imageUrl: "",
+      status: "Arrive bientot",
+      expectedDate: "",
+      notifyEnabled: true,
       enabled: true,
-      books: "Confiance en soi, Finance",
+    });
+    draw();
+  });
+
+  document.querySelector("#add-social")?.addEventListener("click", () => {
+    data.socialLinks.push({
+      id: crypto.randomUUID(),
+      platform: "Facebook",
+      label: "",
+      url: "",
+      enabled: true,
     });
     draw();
   });
@@ -654,6 +908,11 @@ async function renderAdmin() {
     data.books = structuredClone(sourceCatalog);
     const premiumPack = data.packs.find((pack) => Number(pack.count) === 100);
     if (premiumPack) {
+      data.packs = [premiumPack];
+      premiumPack.name = "Bibliotheque DigiBook";
+      premiumPack.price = 2100;
+      premiumPack.originalPrice = 3500;
+      premiumPack.featured = true;
       premiumPack.enabled = true;
       premiumPack.description =
         "La bibliotheque complete pour progresser en finance, business, communication et developpement personnel.";
