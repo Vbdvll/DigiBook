@@ -19,7 +19,7 @@ const defaults = {
       id: crypto.randomUUID(),
       name: "Bibliotheque DigiBook",
       count: 100,
-      price: 2100,
+      price: 2000,
       originalPrice: 3500,
       description: "La bibliotheque complete pour progresser en finance, business, communication et developpement personnel.",
       featured: true,
@@ -215,19 +215,19 @@ function mapPackFromDb(pack) {
 }
 
 function normalizeLegacyPacks(packs) {
-  if (packs.length <= 1) return packs;
-
   const mainPack =
     packs.find((pack) => Number(pack.count) === 100) ||
-    packs.sort((a, b) => Number(b.count) - Number(a.count))[0];
+    [...packs].sort((a, b) => Number(b.count) - Number(a.count))[0];
+
+  if (!mainPack) return defaults.packs;
 
   return [
     {
       ...mainPack,
       name: "Bibliotheque DigiBook",
       count: 100,
-      price: 2100,
-      originalPrice: 3500,
+      price: Number(mainPack.price) === 2100 ? 2000 : mainPack.price,
+      originalPrice: mainPack.originalPrice || 3500,
       featured: true,
       enabled: true,
     },
@@ -417,7 +417,7 @@ async function renderPublic() {
     enabledPacks.find((pack) => Number(pack.count) === 100) ||
     enabledPacks.sort((a, b) => Number(b.count) - Number(a.count))[0];
   const visiblePacks = primaryPack ? [primaryPack] : [];
-  document.title = `${data.siteName || "DigiBook"} - Packs PDF`;
+  document.title = `${data.siteName || "DigiBook"} - Ressources numeriques`;
   document.querySelectorAll(".brand strong").forEach((item) => {
     item.textContent = data.siteName || "DigiBook";
   });
@@ -970,7 +970,7 @@ async function renderAdmin() {
     if (premiumPack) {
       data.packs = [premiumPack];
       premiumPack.name = "Bibliotheque DigiBook";
-      premiumPack.price = 2100;
+      premiumPack.price = 2000;
       premiumPack.originalPrice = 3500;
       premiumPack.featured = true;
       premiumPack.enabled = true;

@@ -94,7 +94,7 @@ Pour un projet Supabase deja configure, execute une seule fois le fichier
 Apres cette migration, les deux sections sont modifiables depuis la page de
 gestion et le bouton `Enregistrer` les synchronise avec Supabase.
 
-L'offre publique est limitee a une bibliotheque de 100 ebooks a `2 100 FC`.
+L'offre publique est limitee a une bibliotheque de 100 ebooks a `2 000 FC`.
 Si la base contient encore les anciens packs, l'application selectionne
 automatiquement le pack de 100 livres. Un enregistrement depuis l'admin nettoie
 ensuite les anciennes offres dans Supabase.
